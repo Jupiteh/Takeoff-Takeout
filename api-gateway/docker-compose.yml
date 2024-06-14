@@ -18,6 +18,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.auth-service.rule=PathPrefix(`/auth`)"
       - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
+    volumes:  # This line should be correctly indented
+      - ../auth-service:/app
 
   mongo:
     image: mongo:latest
