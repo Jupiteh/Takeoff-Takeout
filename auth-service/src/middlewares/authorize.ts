@@ -32,9 +32,9 @@ export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunct
 
 export const authorizeRole = (roles: string[]) => {
     return (req: AuthRequest, res: Response, next: NextFunction) => {
-        console.log("User role:", req.user.role); // Debug log
+        console.log("User role:", req.user?.role); // Debug log
 
-        if (!roles.includes(req.user.role)) {
+        if (!req.user || !roles.includes(req.user.role)) {
             return res.status(403).json({ message: 'Access Denied' });
         }
         next();

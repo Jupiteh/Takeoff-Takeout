@@ -17,13 +17,10 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const user_1 = __importDefault(require("../models/user"));
 const tokenUtils_1 = require("../utils/tokenUtils");
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { username, password, email, role } = req.body;
-    if (!username || !password || !email || !role) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
+    const { username, password, email, role } = req.body; // Ensure to include email
     try {
         const hashedPassword = yield bcryptjs_1.default.hash(password, 10);
-        const newUser = new user_1.default({ username, password: hashedPassword, email, role });
+        const newUser = new user_1.default({ username, password: hashedPassword, email, role }); // Ensure to include email
         yield newUser.save();
         res.status(201).json({ message: 'User created' });
     }
@@ -53,14 +50,11 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.login = login;
 const getUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("Entering getUsers function"); // Debug log
     try {
-        const users = yield user_1.default.find({});
-        console.log("Users fetched successfully:", users); // Debug log
-        res.status(200).json(users);
+        const users = yield user_1.default.find().select('-password'); // Exclude password field
+        res.json(users);
     }
     catch (err) {
-        console.error("Error fetching users:", err); // Debug log
         res.status(500).json({ message: 'Error fetching users', error: err.message });
     }
 });

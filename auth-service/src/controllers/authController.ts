@@ -1,18 +1,14 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import User from '../models/user';
-import { generateToken } from '../utils/tokenUtils';
+import { generateToken } from '../utils/tokenUtils'; 
 
 export const register = async (req: Request, res: Response) => {
-    const { username, password, email, role } = req.body;
-
-    if (!username || !password || !email || !role) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-
+    const { username, password, email, role } = req.body; // Ensure to include email
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ username, password: hashedPassword, email, role });
+        const newUser = new User({ username, password: hashedPassword, email, role }); // Ensure to include email
         await newUser.save();
         res.status(201).json({ message: 'User created' });
     } catch (err: any) {
@@ -39,13 +35,10 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const getUsers = async (req: Request, res: Response) => {
-    console.log("Entering getUsers function"); // Debug log
     try {
-        const users = await User.find({});
-        console.log("Users fetched successfully:", users); // Debug log
-        res.status(200).json(users);
+        const users = await User.find().select('-password'); // Exclude password field
+        res.json(users);
     } catch (err: any) {
-        console.error("Error fetching users:", err); // Debug log
         res.status(500).json({ message: 'Error fetching users', error: err.message });
     }
 };

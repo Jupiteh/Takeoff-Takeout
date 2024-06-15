@@ -30,8 +30,9 @@ const authenticateJWT = (req, res, next) => {
 exports.authenticateJWT = authenticateJWT;
 const authorizeRole = (roles) => {
     return (req, res, next) => {
-        console.log("User role:", req.user.role); // Debug log
-        if (!roles.includes(req.user.role)) {
+        var _a;
+        console.log("User role:", (_a = req.user) === null || _a === void 0 ? void 0 : _a.role); // Debug log
+        if (!req.user || !roles.includes(req.user.role)) {
             return res.status(403).json({ message: 'Access Denied' });
         }
         next();
