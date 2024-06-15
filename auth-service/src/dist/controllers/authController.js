@@ -12,20 +12,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.login = exports.register = void 0;
+exports.getUsers = exports.login = exports.register = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const user_1 = __importDefault(require("../models/user"));
+const tokenUtils_1 = require("../utils/tokenUtils");
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { username, password } = req.body;
+    const { username, password, email, role } = req.body;
+    if (!username || !password || !email || !role) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
     try {
         const hashedPassword = yield bcryptjs_1.default.hash(password, 10);
-        const newUser = new user_1.default({ username, password: hashedPassword });
+        const newUser = new user_1.default({ username, password: hashedPassword, email, role });
         yield newUser.save();
         res.status(201).json({ message: 'User created' });
     }
     catch (err) {
-        res.status(500).json({ message: 'Error creating user', error: err });
+        if (err.code === 11000) {
+            res.status(400).json({ message: 'Username or email already exists' });
+        }
+        else {
+            res.status(500).json({ message: 'Error creating user', error: err.message });
+        }
     }
 });
 exports.register = register;
@@ -36,11 +44,24 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!user || !(yield bcryptjs_1.default.compare(password, user.password))) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
-        const token = jsonwebtoken_1.default.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = (0, tokenUtils_1.generateToken)(user._id, user.role);
         res.json({ token });
     }
     catch (err) {
-        res.status(500).json({ message: 'Error logging in', error: err });
+        res.status(500).json({ message: 'Error logging in', error: err.message });
     }
 });
 exports.login = login;
+const getUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("Entering getUsers function"); // Debug log
+    try {
+        const users = yield user_1.default.find({});
+        console.log("Users fetched successfully:", users); // Debug log
+        res.status(200).json(users);
+    }
+    catch (err) {
+        console.error("Error fetching users:", err); // Debug log
+        res.status(500).json({ message: 'Error fetching users', error: err.message });
+    }
+});
+exports.getUsers = getUsers;

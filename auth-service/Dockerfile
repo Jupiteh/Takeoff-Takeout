@@ -1,23 +1,26 @@
-# Use an official Node.js runtime as a parent image
+# Utilisez une image de base officielle de Node.js
 FROM node:20.14.0
 
-# Set the working directory
+# Définir le répertoire de travail dans le conteneur
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copier les fichiers de package dans le répertoire de travail
 COPY src/package*.json ./
 
-# Install dependencies
+# Installer les dépendances de l'application
 RUN npm install
 
-# Copy the rest of the application code
+# Installer ts-node et nodemon globalement
+RUN npm install -g ts-node nodemon
+
+# Copier le reste des fichiers de l'application
 COPY src .
 
-# Build the TypeScript code
+# Construire le code TypeScript
 RUN npm run build
 
-# Expose the port the app runs on
+# Exposer le port sur lequel l'application s'exécute
 EXPOSE 3000
 
-# Define the command to run the application
-CMD ["npx", "nodemon"]
+# Définir la commande pour exécuter l'application en mode développement avec nodemon
+CMD ["nodemon", "--watch", "src", "--exec", "ts-node", "src/index.ts"]

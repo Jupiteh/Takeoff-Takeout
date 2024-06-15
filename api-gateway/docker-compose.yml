@@ -8,7 +8,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - MONGO_URI=mongodb://mongo:27017/AuthData      
+      - MONGO_URI=mongodb://mongo:27017/AuthData
       - JWT_SECRET=baudelaire
     networks:
       - app-network
@@ -18,8 +18,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.auth-service.rule=PathPrefix(`/auth`)"
       - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
-    volumes:  # This line should be correctly indented
-      - ../auth-service:/app
+    volumes:
+      - ../auth-service/src:/app/src
 
   mongo:
     image: mongo:latest
@@ -39,12 +39,14 @@ services:
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entryPoints.web.address=:80"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./dynamic.yaml:/etc/traefik/dynamic/dynamic.yaml"
     networks:
       - app-network
-    depends_on:
-      - auth-service
 
 networks:
   app-network:
