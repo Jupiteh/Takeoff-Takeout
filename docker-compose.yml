@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  restaurant-api:
+    build: ./services/restaurant_service
+    ports:
+      - '3001:3001'
+    env_file:
+      - ./services/restaurant_service/.env
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - restaurant-mongo
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.restaurant-service.rule=PathPrefix(`/api/restaurants`)"
+      - "traefik.http.services.restaurant-service.loadbalancer.server.port=3001"
+
+  restaurant-mongo:
+    image: mongo
+    container_name: restaurant-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - ./mongo-data/restaurant:/data/db
+    networks:
+      - app-network
+
+  order-api:
+    build: ./services/order_service
+    ports:
+      - '3003:3003'
+    env_file:
+      - ./services/order_service/.env
+    depends_on:
+      - order-mongo
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.order-service.rule=PathPrefix(`/api/orders`)"
+      - "traefik.http.services.order-service.loadbalancer.server.port=3003"
+
+  order-mongo:
+    image: mongo
+    container_name: order-mongo
+    ports:
+      - '27019:27017'
+    volumes:
+      - ./mongo-data/order:/data/db
+    networks:
+      - app-network
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: auth-service
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://auth-mongo:27017/AuthData
+      - JWT_SECRET=baudelaire
+    networks:
+      - app-network
+    depends_on:
+      - auth-mongo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-service.rule=PathPrefix(`/auth`)"
+      - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
+    volumes:
+      - ./services/auth-service:/app
+
+  auth-mongo:
+    image: mongo:latest
+    container_name: auth-mongo
+    ports:
+      - "27018:27017"
+    networks:
+      - app-network
+    volumes:
+      - auth-mongo-data:/data/db
+
+  traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    ports:
+      - "8080:80"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entryPoints.web.address=:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./dynamic.yaml:/etc/traefik/dynamic/dynamic.yaml"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  auth-mongo-data:
