@@ -18,6 +18,12 @@ http:
       entryPoints:
         - web
 
+    logging-service-router:
+      rule: "PathPrefix(`/logs`)"
+      service: logging-service
+      entryPoints:
+        - web
+
   services:
     auth-service:
       loadBalancer:
@@ -33,3 +39,8 @@ http:
       loadBalancer:
         servers:
           - url: "http://order-api:3003"
+
+    logging-service:
+      loadBalancer:
+        servers:
+          - url: "http://logging-service:3004"
