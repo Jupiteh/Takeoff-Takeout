@@ -8,7 +8,9 @@ function MenuPage() {
   const [articles, setArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState({});
   const [menuArticles, setMenuArticles] = useState({});
-  const [newMenu, setNewMenu] = useState({});
+  const [newMenu, setNewMenu] = useState({ menu_Name: '', price: '' });
+  const [editingMenu, setEditingMenu] = useState(null);
+  const [editedMenu, setEditedMenu] = useState({ menu_Name: '', price: '' });
 
   useEffect(() => {
     const fetchMenus = async () => {
@@ -44,8 +46,9 @@ function MenuPage() {
 
   const handleCreateMenu = async () => {
     try {
-      const response = await restaurantApi.post('/menus', { ID_Restaurant: restaurantId });
+      const response = await restaurantApi.post('/menus', { ...newMenu, ID_Restaurant: restaurantId });
       setMenus([...menus, response.data]);
+      setNewMenu({ menu_Name: '', price: '' });
     } catch (error) {
       console.error('Error creating menu:', error);
     }
@@ -94,6 +97,27 @@ function MenuPage() {
     }
   };
 
+  const handleEditClick = (menu) => {
+    setEditingMenu(menu.ID_Menu);
+    setEditedMenu({ menu_Name: menu.menu_Name, price: menu.price });
+  };
+
+  const handleUpdateMenu = async (menuId) => {
+    try {
+      await restaurantApi.put(`/menus/${menuId}`, editedMenu);
+      setMenus(menus.map(menu => (menu.ID_Menu === menuId ? { ...menu, ...editedMenu } : menu)));
+      setEditingMenu(null);
+      setEditedMenu({ menu_Name: '', price: '' });
+    } catch (error) {
+      console.error('Error updating menu:', error);
+    }
+  };
+
+  const handleInputChange = (event, setFunction) => {
+    const { name, value } = event.target;
+    setFunction(prevState => ({ ...prevState, [name]: value }));
+  };
+
   return (
     <div>
       <h1>Menus for Restaurant {restaurantId}</h1>
@@ -102,6 +126,8 @@ function MenuPage() {
           {menus.map((menu) => (
             <li key={menu.ID_Menu}>
               <p>ID Menu: {menu.ID_Menu}</p>
+              <p>Menu Name: {menu.menu_Name}</p>
+              <p>Price: {menu.price}</p>
               <select
                 value={selectedArticle[menu.ID_Menu] || ''}
                 onChange={(e) => handleArticleChange(menu.ID_Menu, e.target.value)}
@@ -116,6 +142,26 @@ function MenuPage() {
               <button onClick={() => handleAddArticleToMenu(menu.ID_Menu)}>Add Article to Menu</button>
               <button onClick={() => fetchMenuArticles(menu.ID_Menu)}>Show Articles</button>
               <button onClick={() => handleDeleteMenu(menu.ID_Menu)}>Delete Menu</button>
+              <button onClick={() => handleEditClick(menu)}>Edit Menu</button>
+              {editingMenu === menu.ID_Menu && (
+                <div>
+                  <input
+                    type="text"
+                    name="menu_Name"
+                    value={editedMenu.menu_Name}
+                    onChange={(e) => handleInputChange(e, setEditedMenu)}
+                    placeholder="Menu Name"
+                  />
+                  <input
+                    type="number"
+                    name="price"
+                    value={editedMenu.price}
+                    onChange={(e) => handleInputChange(e, setEditedMenu)}
+                    placeholder="Price"
+                  />
+                  <button onClick={() => handleUpdateMenu(menu.ID_Menu)}>Update Menu</button>
+                </div>
+              )}
               {menuArticles[menu.ID_Menu] && (
                 <ul>
                   {menuArticles[menu.ID_Menu].map(article => (
@@ -132,7 +178,24 @@ function MenuPage() {
       ) : (
         <p>No menus found. Create a new menu below.</p>
       )}
-      <button onClick={handleCreateMenu}>Create Menu</button>
+      <div>
+        <h2>Create New Menu</h2>
+        <input
+          type="text"
+          name="menu_Name"
+          value={newMenu.menu_Name}
+          onChange={(e) => handleInputChange(e, setNewMenu)}
+          placeholder="Menu Name"
+        />
+        <input
+          type="number"
+          name="price"
+          value={newMenu.price}
+          onChange={(e) => handleInputChange(e, setNewMenu)}
+          placeholder="Price"
+        />
+        <button onClick={handleCreateMenu}>Create Menu</button>
+      </div>
     </div>
   );
 }
